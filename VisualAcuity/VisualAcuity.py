@@ -1,47 +1,76 @@
 from tkinter import *
 from tkinter.ttk import Progressbar
+import subprocess
+import speech_recognition as sr
+import threading
 
-class Fullscreen_Example:
-    curtext = "E"
-    size = 550
+curtext = 'E'
+size = 550
+window = Tk()
 
-    def __init__(self):
-        self.window = Tk()
-        self.window.title("Visual Acuity Voice Recognizer")
-        self.window.attributes('-fullscreen', True) 
-        self.fullScreenState = False
-        self.window.bind("<F11>", self.toggleFullScreen)
-        self.window.bind("<Escape>", self.quitFullScreen)
+def main():
+    window.title("Visual Acuity Voice Recognizer")
+    window.attributes('-fullscreen', True) 
+    fullScreenState = False
+    window.bind("<F11>", toggleFullScreen)
+    window.bind("<Escape>", quitFullScreen)
+    
+    statusText()
+    setcurrenttext(curtext, size)
+    window.mainloop()
 
-        self.statusText()
-        self.setcurrenttext(Fullscreen_Example.curtext, Fullscreen_Example.size)
-        self.window.mainloop()
+def toggleFullScreen(event):
+    fullScreenState = not fullScreenState
+    window.attributes("-fullscreen", fullScreenState)
 
-    def toggleFullScreen(self, event):
-        self.fullScreenState = not self.fullScreenState
-        self.window.attributes("-fullscreen", self.fullScreenState)
+def quitFullScreen(event):
+    fullScreenState = False
+    window.attributes("-fullscreen", fullScreenState)
 
-    def quitFullScreen(self, event):
-        self.fullScreenState = False
-        self.window.attributes("-fullscreen", self.fullScreenState)
+def statusText():
+    # Create label
+    status = Label(window, text = "Listening...")
+    status.config(font =("Montserrat Semibold", 14))
+    status.pack()
 
-    def statusText(self):
-        # Create label
-        status = Label(self.window, text = "Listening...")
-        status.config(font =("Montserrat Semibold", 14))
-        status.pack()
+    showSpinner()
 
-        self.showSpinner()
+def setcurrenttext(curtext,size):
+    currentletter = Label(window, text = curtext)
+    currentletter.config(font =("Eyechart", size))    
+    currentletter.pack(pady=100)
 
-    def setcurrenttext(self,curtext,size):
-        currentletter = Label(self.window, text = curtext)
-        currentletter.config(font =("Eyechart", size))    
-        currentletter.pack(pady=100)
+def showSpinner():
+    progressbar = Progressbar(window,orient=HORIZONTAL,length=200,mode="determinate",takefocus=True,maximum=100)
+    progressbar.pack() 
+    progressbar.start(25)   
 
-    def showSpinner(self):
-        progressbar = Progressbar(self.window,orient=HORIZONTAL,length=200,mode="determinate",takefocus=True,maximum=100)
-        progressbar.pack()
-        progressbar.start(25)
+def recognizer():
+    print('running speech recognition')
+    
+    r = sr.Recognizer()
+    r.energy_threshold = 4000
+    with sr.Microphone() as source:
+        print('listening...')
+        audio = r.listen(source)
+        temp = ''
+        while True:
+            try:
+                textresult = r.recognize_google(audio)
 
-if __name__ == '__main__':
-    app = Fullscreen_Example()
+                # Proceed if there are changes
+                if(textresult == temp):
+                    continue
+
+                temp = textresult
+
+                message = "you said:{}".format(textresult)
+                print(message)
+
+                audio = r.listen(source)
+            except:
+               print('can you say it louder?')
+    
+
+threading.Thread(target=recognizer).start()
+# main()
