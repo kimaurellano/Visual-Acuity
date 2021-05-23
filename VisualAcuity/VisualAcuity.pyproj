@@ -11,6 +11,8 @@
     <OutputPath>.</OutputPath>
     <Name>VisualAcuity</Name>
     <RootNamespace>VisualAcuity</RootNamespace>
+    <InterpreterId>Global|PythonCore|3.9</InterpreterId>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,7 +23,25 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="SpeechRecog.py" />
     <Compile Include="VisualAcuity.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="image\1.jpg" />
+    <Content Include="image\2.jpg" />
+    <Content Include="image\3.jpg" />
+    <Content Include="image\4.jpg" />
+    <Content Include="image\5.jpg" />
+    <Content Include="image\6.jpg" />
+    <Content Include="image\7.jpg" />
+    <Content Include="image\8.jpg" />
+    <Content Include="letterlist.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="image\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
