@@ -5,7 +5,9 @@ import speech_recognition as sr
 import threading
 from PIL import Image, ImageTk
 import os
+import sys
 
+global status
 window = Tk()
 global image_number
 image_number = 0
@@ -54,11 +56,21 @@ def main():
 
     loadimage()
 
+    ExitButton = Button(window, text="Exit", command=closewindow, height=2, width=5)
+    ExitButton.lift(aboveThis=canvas)
+    ExitButton.pack()
+
     NextButton = Button(window, text ="Next", command=loadimage)
+    NextButton.place(x=100, y=100)
     NextButton.lift(aboveThis=canvas)
     NextButton.pack()
 
+    NextButton.pack_forget()
+
     window.mainloop()
+
+def closewindow():
+    window.destroy()
 
 def loadallimage():
     global images
@@ -100,7 +112,8 @@ def quitFullScreen(event):
 
 def statusText():
     # Create label
-    status = Label(window, text = "Listening...")
+    global status
+    status = Label(window, text = "listening...", bg="#FFFFFF")
     status.config(font =("Montserrat Semibold", 14))
     status.pack()
 
@@ -159,6 +172,11 @@ def recognizer():
                 for i in letters.split(','):
                     currentletters.append(i)
                 print(currentletters)
+
+                global status
+                status.configure(text="Done. Printing result...\nTest restarted")
+
+                canvas.itemconfig(image_on_canvas, image=images[image_number])
                 
             message = "you said:{}".format(textresult)
             print(message)
@@ -170,5 +188,7 @@ def recognizer():
             temp = textresult
             textresult = ''
 
-threading.Thread(target=recognizer).start()
+thread = threading.Thread(target=recognizer)
+thread.setDaemon(True)
+thread.start()
 main()
