@@ -1,37 +1,45 @@
 from tkinter import *
 from tkinter.ttk import Progressbar
+from tkinter import ttk
 import subprocess
 import speech_recognition as sr
 import threading
 from PIL import Image, ImageTk
 import os
 import sys
+import random
+from escpos.printer import Usb
 
+global canvas
 global status
 window = Tk()
-global image_number
-image_number = 0
+global image_set_number
+global current_indices
+current_indices = []
+global current_set_of_images
+current_set_of_images = {}
+image_set_number = 1
 global letterlist
 letterlist = {
-        0:"F",
-        1:"E,D",
-        2:"C,O,D",
-        3:"Z,D,P",
-        4:"E,C,O,F",
-        5:"P,X,Y,H,E",
-        6:"D,F,Z,C,P,E",
-        7:"O,D,L,Z,X,F,Y",
+        1:["F"],
+        2:['E','D'],
+        3:['C','O','D'],
+        4:['Z','D','P'],
+        5:['E','C','O','F'],
+        6:['P','X','Y','H','E'],
+        7:['D','F','Z','C','P','E'],
+        8:['O','D','L','Z','X','F','Y'],
     }
 global score
 score = {
-        0:"3.00 to 3.50",
-        1:"2.75 to 2.25",
-        2:"1.50 to 2.00",
-        3:"1.00 to 1.50",
-        4:"0.50 to 0.75",
-        5:"0.25 to 0.50",
-        6:"0.25",
-        7:"Plano",
+        1:"3.00 to 3.50",
+        2:"2.75 to 2.25",
+        3:"1.50 to 2.00",
+        4:"1.00 to 1.50",
+        5:"0.50 to 0.75",
+        6:"0.25 to 0.50",
+        7:"0.25",
+        8:"Plano",
     }
 global currentletters
 currentletters = []
@@ -51,16 +59,19 @@ def main():
     global canvas
     canvas = Canvas(window, width = 1920, height = 900, bg='#FFFFFF')  
     canvas.pack() 
+    
     global image_on_canvas
-    image_on_canvas = canvas.create_image(1000, 500, anchor=CENTER, image=images[image_number])
+    image_on_canvas = canvas.create_image(1000, 500, anchor=CENTER)
 
-    loadimage()
+    prepareimageset()
+
+    shownextimageinset()
 
     ExitButton = Button(window, text="Exit", command=closewindow, height=2, width=5)
     ExitButton.lift(aboveThis=canvas)
     ExitButton.pack()
 
-    NextButton = Button(window, text ="Next", command=loadimage)
+    NextButton = Button(window, text ="Next", command=prepareimageset)
     NextButton.place(x=100, y=100)
     NextButton.lift(aboveThis=canvas)
     NextButton.pack()
@@ -74,33 +85,89 @@ def closewindow():
 
 def loadallimage():
     global images
-    images = []
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="1.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="2.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="3.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="4.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="5.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="6.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="7.jpg")).replace("\\","/")))
-    images.append(ImageTk.PhotoImage(file=("{ospath}\\image\\{file}".format(ospath=os.getcwd(),file="8.jpg")).replace("\\","/")))
+    images = {
+        1:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_1\\{file}".format(ospath=os.getcwd(),file="f.jpg")).replace("\\","/"))
+        ],
+        2:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_2\\{file}".format(ospath=os.getcwd(),file="e.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_2\\{file}".format(ospath=os.getcwd(),file="d.jpg")).replace("\\","/"))
+        ],
+        3:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_3\\{file}".format(ospath=os.getcwd(),file="c.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_3\\{file}".format(ospath=os.getcwd(),file="o.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_3\\{file}".format(ospath=os.getcwd(),file="d.jpg")).replace("\\","/"))
+        ],
+        4:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_4\\{file}".format(ospath=os.getcwd(),file="z.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_4\\{file}".format(ospath=os.getcwd(),file="d.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_4\\{file}".format(ospath=os.getcwd(),file="p.jpg")).replace("\\","/"))
+        ],
+        5:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_5\\{file}".format(ospath=os.getcwd(),file="e.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_5\\{file}".format(ospath=os.getcwd(),file="c.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_5\\{file}".format(ospath=os.getcwd(),file="o.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_5\\{file}".format(ospath=os.getcwd(),file="f.jpg")).replace("\\","/"))
+        ],
+        6:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_6\\{file}".format(ospath=os.getcwd(),file="p.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_6\\{file}".format(ospath=os.getcwd(),file="x.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_6\\{file}".format(ospath=os.getcwd(),file="y.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_6\\{file}".format(ospath=os.getcwd(),file="h.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_6\\{file}".format(ospath=os.getcwd(),file="e.jpg")).replace("\\","/"))
+        ],
+        7:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_7\\{file}".format(ospath=os.getcwd(),file="d.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_7\\{file}".format(ospath=os.getcwd(),file="f.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_7\\{file}".format(ospath=os.getcwd(),file="z.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_7\\{file}".format(ospath=os.getcwd(),file="c.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_7\\{file}".format(ospath=os.getcwd(),file="p.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_7\\{file}".format(ospath=os.getcwd(),file="e.jpg")).replace("\\","/"))
+        ],
+        8:[
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="o.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="d.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="l.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="z.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="x.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="f.jpg")).replace("\\","/")),
+            ImageTk.PhotoImage(file=("{ospath}\\image\\line_8\\{file}".format(ospath=os.getcwd(),file="y.jpg")).replace("\\","/")),
+        ]
+    }
 
-def loadimage():
-    global image_number
+# Prepare set of images
+def prepareimageset():
+    global image_set_number
     global currentletters
     global letterlist
+    global images
+    global current_set_of_images
 
-    letters = letterlist.get(image_number)
+    letters = letterlist.get(image_set_number)
 
-    # Change to new set of letters
-    for i in letters.split(','):
-        currentletters.append(i)
+    # Change to new array of letters
+    for idx,item in enumerate(letters, start=0):
+        currentletters.insert(idx, item.lower())
+
+    # Prepare fetched set of images into key(letter)-value(.jpg) pair
+    for idx,item in enumerate(images, start=0):
+        current_set_of_images[currentletters[idx]] = images.get(image_set_number)[idx]
+        # We only need set of image at a time
+        if (idx == image_set_number - 1):
+            break
     
-    if (image_number > 7):
-        image_number = 0
+    if (image_set_number > 8):
+        image_set_number = 1
 
-    canvas.itemconfig(image_on_canvas, image=images[image_number])
+    image_set_number += 1
 
-    image_number += 1
+def shownextimageinset():
+    # Load the next image in set randomly.
+    # Avoid repeating image
+    picked_letter = random.choice(currentletters)
+    
+    global canvas
+    canvas.itemconfig(image_on_canvas, image=current_set_of_images[picked_letter])
 
 def toggleFullScreen(event):
     fullScreenState = not fullScreenState
@@ -141,42 +208,45 @@ def recognizer():
             if textresult == '':
                 continue
 
-            textresult = textresult[0].upper()
+            textresult = textresult[0].lower()
 
             # Accept only first index letters
             if(textresult in currentletters):
-               # Avoid reading same letter
+                # Avoid reading same letter
                 currentletters.remove(textresult)
                 print('letters left:{}'.format(currentletters))
                 if not currentletters:
                    # Empty list of letters means all are done
-                   # proceed to next image
+                   # proceed to next set of images
                    print('loading next image...')
-                   loadimage()
+                   prepareimageset()
+                   
+                shownextimageinset()
             elif(textresult not in currentletters):
                 global score
-                global image_number
+                global image_set_number
                 global letterlist
                 global letters
 
-                print('printing result\n{}\nResetting to '.format(score[image_number]))
+                print('printing result...\n')
                 
-                # Reset values to first
-                image_number = 0
-                letters = letterlist.get(image_number)
+                # Xprinter[vendorid, productid, 0, in, out]
+                # Identified thru lsusb
+                p = Usb(0x0483, 0x070b, 0, 0x81, 0x02)
+                p.text("***Visual Acuity Result***\nScore:{}\n\nThank you!\n\n\n\n\n".format(score[image_set_number]))
+
+                # Will reset the set of images back to first set
+                image_set_number = 1
                 
                 # Avoid unnecessary letters
                 currentletters.clear()
 
-                # Change back to first set of letters
-                for i in letters.split(','):
-                    currentletters.append(i)
-                print(currentletters)
-
                 global status
                 status.configure(text="Done. Printing result...\nTest restarted")
 
-                canvas.itemconfig(image_on_canvas, image=images[image_number])
+                prepareimageset()
+                
+                shownextimageinset()
                 
             message = "you said:{}".format(textresult)
             print(message)
