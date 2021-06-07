@@ -18,7 +18,7 @@ global current_indices
 current_indices = []
 global current_set_of_images
 current_set_of_images = {}
-image_set_number = 1
+image_set_number = 7
 global letterlist
 letterlist = {
         1:["F"],
@@ -32,17 +32,24 @@ letterlist = {
     }
 global score
 score = {
-        1:"3.00 to 3.50",
-        2:"2.75 to 2.25",
-        3:"1.50 to 2.00",
-        4:"1.00 to 1.50",
-        5:"0.50 to 0.75",
-        6:"0.25 to 0.50",
-        7:"0.25",
-        8:"Plano",
+        1:"Visual Acuity Score: 20/200\n\nEye Refraction: 3.00 to 3.50\n\n",
+        2:"Visual Acuity Score: 20/100\n\nEye Refraction: 2.75 to 2.25\n\n",
+        3:"Visual Acuity Score: 20/70\n\nEye Refraction: 1.50 to 2.00\n\n",
+        4:"Visual Acuity Score: 20/50\n\nEye Refraction: 1.00 to 1.50\n\n",
+        5:"Visual Acuity Score: 20/40\n\nEye Refraction: 0.50 to 0.75\n\n",
+        6:"Visual Acuity Score: 20/30\n\nEye Refraction: 0.25 to 0.50\n\n",
+        7:"Visual Acuity Score: 20/25\n\nEye Refraction: 0.25\n\n",
+        8:"Visual Acuity Score: 20/20\n\nEye Refraction: Plano\n\n"
     }
 global currentletters
 currentletters = []
+
+# Will always start at left eye
+global onlefteye
+onlefteye = True
+
+global picked_letter
+picked_letter = ''
 
 def main():
     window.title("Visual Acuity Voice Recognizer")
@@ -153,17 +160,19 @@ def prepareimageset():
     for idx,item in enumerate(images, start=0):
         current_set_of_images[currentletters[idx]] = images.get(image_set_number)[idx]
         # We only need set of image at a time
-        if (idx == image_set_number - 1):
+        if (idx == len(currentletters) - 1):
             break
     
     if (image_set_number > 8):
         image_set_number = 1
-
+        return
+        
     image_set_number += 1
 
 def shownextimageinset():
     # Load the next image in set randomly.
     # Avoid repeating image
+    global picked_letter
     picked_letter = random.choice(currentletters)
     
     global canvas
@@ -185,6 +194,9 @@ def statusText():
     status.pack()
 
 def recognizer():
+    global image_set_number
+    global picked_letter
+    
     print('running speech recognition')
     
     r = sr.Recognizer()
@@ -210,8 +222,8 @@ def recognizer():
 
             textresult = textresult[0].lower()
 
-            # Accept only first index letters
-            if(textresult in currentletters):
+            # Accept only first index 
+            if(textresult == picked_letter):
                 # Avoid reading same letter
                 currentletters.remove(textresult)
                 print('letters left:{}'.format(currentletters))
@@ -222,18 +234,26 @@ def recognizer():
                    prepareimageset()
                    
                 shownextimageinset()
-            elif(textresult not in currentletters):
+            elif(textresult != currentletters or image_set_number > 8): #image_set_number > 8 means test finished
                 global score
-                global image_set_number
                 global letterlist
                 global letters
+                global onlefteye
 
                 print('printing result...\n')
                 
                 # Xprinter[vendorid, productid, 0, in, out]
                 # Identified thru lsusb
                 p = Usb(0x0483, 0x070b, 0, 0x81, 0x02)
-                p.text("***Visual Acuity Result***\nScore:{}\n\nThank you!\n\n\n\n\n".format(score[image_set_number]))
+                p.text('DIROY ~ ROSEUS\n\nOPTICAL CLINIC\n\n(+63917 142 9401)\n\n\n{}'.format('Left eye result' if onlefteye else 'Right eye result'))
+                p.set(align='center')
+                p.text(score.get(image_set_number))
+                p.set(align='center')
+                p.text('Your Visual Acuity test has been completed. Thank You!')
+                p.set(align='center')
+                
+                # Cut paper
+                p.cut()
 
                 # Will reset the set of images back to first set
                 image_set_number = 1
@@ -248,6 +268,10 @@ def recognizer():
                 
                 shownextimageinset()
                 
+                # Error in test means first eye done.
+                # right eye next
+                onlefteye = False    
+            
             message = "you said:{}".format(textresult)
             print(message)
 
