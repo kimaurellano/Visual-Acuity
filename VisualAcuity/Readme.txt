@@ -4,6 +4,8 @@ SpeechRecognition
 escpos
 PyAudio
 
+sudo apt-get install flac
+
 PyAudio:
 sudo apt-get install portaudio19-dev python-pyaudio
 then
