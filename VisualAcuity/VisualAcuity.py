@@ -199,10 +199,10 @@ def recognizer():
     
     print('running speech recognition')
     
-    r = sr.Recognizer()
-    r.energy_threshold = 4000
     with sr.Microphone() as source:
         print('listening...')
+        r = sr.Recognizer()
+        r.energy_threshold = 4000
         textresult = ''
         temp = ''
         while True:
