@@ -2,6 +2,14 @@ libs:
 Pillow
 SpeechRecognition
 escpos
+PyAudio
+
+sudo apt-get install flac
+
+PyAudio:
+sudo apt-get install portaudio19-dev python-pyaudio
+then
+pip3 install PyAudio
 
 usb access denied:
 sudo groupadd usbusers
